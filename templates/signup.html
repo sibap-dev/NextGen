@@ -155,45 +155,54 @@
             line-height: 1.5;
         }
         
-        .form-floating {
+        /* NEW INPUT FIELD DESIGN */
+        .input-group {
             margin-bottom: 20px;
             position: relative;
         }
         
-        .form-floating input {
+        .input-field {
+            width: 100%;
+            height: 60px;
+            background: var(--white);
             border: 2px solid var(--gray-200);
             border-radius: 12px;
-            padding: 20px 16px 20px 48px;
+            padding: 18px 16px 6px 52px;
             font-size: 16px;
-            font-weight: 400;
-            transition: all 0.3s ease;
-            background: var(--gray-50);
-            height: 60px;
-        }
-        
-        .form-floating input:focus {
-            border-color: var(--primary-blue);
-            background: var(--white);
-            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
-            outline: none;
-        }
-        
-        .form-floating input:not(:placeholder-shown) {
-            background: var(--white);
-        }
-        
-        .form-floating label {
-            color: var(--gray-500);
-            font-size: 14px;
             font-weight: 500;
-            padding-left: 48px;
+            color: var(--gray-800);
             transition: all 0.3s ease;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
         }
         
-        .form-floating input:focus ~ label,
-        .form-floating input:not(:placeholder-shown) ~ label {
+        .input-field:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1), 0 3px 10px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+        
+        .input-field:focus + .input-label,
+        .input-field:not(:placeholder-shown) + .input-label {
+            top: 6px;
+            font-size: 12px;
             color: var(--primary-blue);
             font-weight: 600;
+        }
+        
+        .input-label {
+            position: absolute;
+            left: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-500);
+            font-size: 16px;
+            font-weight: 500;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            background: var(--white);
+            padding: 0 4px;
         }
         
         .input-icon {
@@ -203,11 +212,12 @@
             transform: translateY(-50%);
             color: var(--gray-400);
             font-size: 18px;
-            z-index: 10;
+            width: 20px;
+            text-align: center;
             transition: color 0.3s ease;
         }
         
-        .form-floating input:focus ~ .input-icon {
+        .input-field:focus ~ .input-icon {
             color: var(--primary-blue);
         }
         
@@ -613,9 +623,20 @@
                 font-size: 24px;
             }
             
-            .form-floating input {
-                padding: 18px 14px 18px 44px;
+            .input-field {
                 height: 56px;
+                padding: 16px 14px 4px 48px;
+                font-size: 15px;
+            }
+            
+            .input-label {
+                left: 48px;
+                font-size: 15px;
+            }
+            
+            .input-field:focus + .input-label,
+            .input-field:not(:placeholder-shown) + .input-label {
+                font-size: 11px;
             }
             
             .input-icon {
@@ -675,26 +696,53 @@
         {% endwith %}
         
         <form action="{{ url_for('signup') }}" method="post" id="signupForm">
-            <div class="form-floating">
-                <input type="text" class="form-control" id="fullName" name="full_name" 
-                       placeholder="Full Name" required minlength="2" maxlength="100"
-                       value="{{ request.form.full_name if request.form.full_name else '' }}">
-                <label for="fullName">Full Name</label>
+            <!-- NEW FULL NAME INPUT FIELD -->
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="fullName" 
+                    name="full_name" 
+                    class="input-field"
+                    placeholder=" " 
+                    required 
+                    minlength="2" 
+                    maxlength="100"
+                    value="{{ request.form.full_name if request.form.full_name else '' }}"
+                    autocomplete="name"
+                >
+                <label for="fullName" class="input-label">Full Name</label>
                 <i class="fas fa-user input-icon"></i>
             </div>
             
-            <div class="form-floating">
-                <input type="email" class="form-control" id="email" name="email" 
-                       placeholder="Email Address" required
-                       value="{{ request.form.email if request.form.email else '' }}">
-                <label for="email">Email Address</label>
+            <!-- NEW EMAIL INPUT FIELD -->
+            <div class="input-group">
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="input-field"
+                    placeholder=" " 
+                    required
+                    value="{{ request.form.email if request.form.email else '' }}"
+                    autocomplete="email"
+                >
+                <label for="email" class="input-label">Email Address</label>
                 <i class="fas fa-envelope input-icon"></i>
             </div>
             
-            <div class="form-floating">
-                <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="Password" required minlength="8">
-                <label for="password">Create Password</label>
+            <!-- NEW PASSWORD INPUT FIELD -->
+            <div class="input-group">
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="input-field"
+                    placeholder=" " 
+                    required 
+                    minlength="8"
+                    autocomplete="new-password"
+                >
+                <label for="password" class="input-label">Create Password</label>
                 <i class="fas fa-lock input-icon"></i>
             </div>
             
@@ -718,10 +766,18 @@
                 </div>
             </div>
             
-            <div class="form-floating">
-                <input type="password" class="form-control" id="confirmPassword" name="confirm_password" 
-                       placeholder="Confirm Password" required>
-                <label for="confirmPassword">Confirm Password</label>
+            <!-- NEW CONFIRM PASSWORD INPUT FIELD -->
+            <div class="input-group">
+                <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirm_password" 
+                    class="input-field"
+                    placeholder=" " 
+                    required
+                    autocomplete="new-password"
+                >
+                <label for="confirmPassword" class="input-label">Confirm Password</label>
                 <i class="fas fa-check-double input-icon"></i>
                 <div id="passwordMatch" class="password-match"></div>
             </div>
