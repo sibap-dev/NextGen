@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PM Internship Scheme</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0066cc;
+            --secondary-blue: #003366;
+            --accent-orange: #ff6600;
+            --light-blue: #99ccff;
+            --white: #ffffff;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 50%, #001133 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-20px, -20px) rotate(180deg); }
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.1),
+                0 8px 30px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            padding: 48px;
+            width: 100%;
+            max-width: 460px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 10;
+            margin: 20px 0; /* Add margin for mobile spacing */
+        }
+        
+        .logo-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo-section img {
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+            margin-bottom: 16px;
+        }
+        
+        .logo-text {
+            color: var(--gray-800);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 26px;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-subtitle {
+            color: var(--gray-500);
+            font-size: 14px;
+            font-weight: 400;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .login-title {
+            color: var(--gray-800);
+            text-align: center;
+            margin-bottom: 16px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-subtitle {
+            color: var(--gray-500);
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+        
+        .form-floating {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-floating input {
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 20px 16px 20px 48px;
+            font-size: 16px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            background: var(--gray-50);
+            height: 60px;
+        }
+        
+        .form-floating input:focus {
+            border-color: var(--primary-blue);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+            outline: none;
+        }
+        
+        .form-floating input:not(:placeholder-shown) {
+            background: var(--white);
+        }
+        
+        .form-floating label {
+            color: var(--gray-500);
+            font-size: 14px;
+            font-weight: 500;
+            padding-left: 48px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-floating input:focus ~ label,
+        .form-floating input:not(:placeholder-shown) ~ label {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 18px;
+            z-index: 10;
+            transition: color 0.3s ease;
+        }
+        
+        .form-floating input:focus ~ .input-icon {
+            color: var(--primary-blue);
+        }
+        
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-check-input {
+            margin-right: 8px;
+            accent-color: var(--primary-blue);
+        }
+        
+        .form-check-label {
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+        
+        .forgot-password {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-password:hover {
+            color: var(--accent-orange);
+            text-decoration: underline;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-orange) 100%);
+            color: white;
+            border: none;
+            padding: 18px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 102, 204, 0.3);
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-login:hover::before {
+            left: 100%;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 102, 204, 0.4);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 32px 0 24px 0;
+            position: relative;
+            color: var(--gray-400);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gray-200), transparent);
+        }
+        
+        .divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 24px;
+            position: relative;
+        }
+        
+        /* ENHANCED SIGNUP SECTION - More Visible */
+        .signup-section {
+            margin-top: 20px;
+            padding: 0;
+            text-align: center;
+        }
+        
+        .signup-text {
+            color: var(--gray-600);
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        
+        .btn-signup {
+            background: linear-gradient(135deg, var(--accent-orange) 0%, var(--primary-blue) 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(255, 102, 0, 0.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-signup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-signup:hover::before {
+            left: 100%;
+        }
+        
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 102, 0, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .btn-signup i {
+            margin-right: 8px;
+        }
+        
+        /* Flash Message Styles */
+        .flash-message {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            position: relative;
+            animation: slideDown 0.3s ease-out;
+            line-height: 1.5;
+        }
+        
+        .flash-message.success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
+            color: var(--success);
+            border: 1px solid #bbf7d0;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+        }
+        
+        .flash-message.error {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            color: var(--error);
+            border: 1px solid #fecaca;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+        }
+        
+        .flash-message.info {
+            background: linear-gradient(135deg, #eff6ff 0%, #bfdbfe 100%);
+            color: var(--primary-blue);
+            border: 1px solid #bfdbfe;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+        }
+        
+        .flash-message i {
+            margin-right: 12px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .flash-close {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .flash-close:hover {
+            opacity: 1;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .security-notice {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+            text-align: center;
+        }
+        
+        .security-notice .security-icons {
+            margin-bottom: 8px;
+        }
+        
+        .security-notice .security-icons i {
+            color: var(--success);
+            margin: 0 4px;
+            font-size: 14px;
+        }
+        
+        .security-notice p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 576px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+            
+            .login-container {
+                padding: 32px 24px;
+                border-radius: 20px;
+                max-width: 100%;
+                margin: 10px 0;
+            }
+            
+            .login-title {
+                font-size: 24px;
+            }
+            
+            .form-floating input {
+                padding: 18px 14px 18px 44px;
+                height: 56px;
+            }
+            
+            .input-icon {
+                left: 14px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .login-container {
+                padding: 24px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <img src="https://pminternship.mca.gov.in/Content/images/emblem-dark.png" alt="Government Emblem" height="60">
+            <div class="logo-text">PM Internship Scheme</div>
+            <div class="logo-subtitle">Government of India</div>
+        </div>
+        
+        <h2 class="login-title">Welcome Back</h2>
+        <p class="login-subtitle">Sign in to your PM Internship account to continue your journey</p>
+        
+        <!-- Flask Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}" id="flash-message-{{ loop.index }}">
+                        {% if category == 'success' %}
+                            <i class="fas fa-check-circle"></i>
+                        {% elif category == 'info' %}
+                            <i class="fas fa-info-circle"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                        {% endif %}
+                        <span>{{ message|safe }}</span>
+                        <button type="button" class="flash-close" onclick="closeFlashMessage('flash-message-{{ loop.index }}')">
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form action="{{ url_for('login') }}" method="post" id="loginForm">
+            <div class="form-floating">
+                <input type="email" class="form-control" id="username" name="username" 
+                       placeholder="Email Address" required 
+                       value="{{ request.form.username if request.form.username else '' }}">
+                <label for="username">Email Address</label>
+                <i class="fas fa-envelope input-icon"></i>
+            </div>
+            
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" 
+                       placeholder="Password" required>
+                <label for="password">Password</label>
+                <i class="fas fa-lock input-icon"></i>
+            </div>
+            
+            <div class="remember-forgot">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <a href="#" class="forgot-password">Forgot Password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-login" id="loginBtn">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In Securely
+            </button>
+        </form>
+        
+        <div class="divider">
+            <span>New to PM Internship?</span>
+        </div>
+        
+        <!-- ENHANCED SIGNUP SECTION - MORE VISIBLE -->
+        <div class="signup-section">
+            <p class="signup-text">Don't have an account yet?</p>
+            <a href="{{ url_for('signup') }}" class="btn-signup">
+                <i class="fas fa-user-plus"></i>Create New Account
+            </a>
+        </div>
+        
+        <div class="security-notice">
+            <div class="security-icons">
+                <i class="fas fa-shield-alt"></i>
+                <i class="fas fa-lock"></i>
+                <i class="fas fa-certificate"></i>
+            </div>
+            <p>Your login credentials are protected with enterprise-grade security.<br>
+               This portal is secured by the Government of India.</p>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Flash message close function
+        function closeFlashMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.style.animation = 'slideUp 0.3s ease-out';
+                setTimeout(() => {
+                    message.remove();
+                }, 300);
+            }
+        }
+        
+        // Auto-hide success messages after 5 seconds
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('.flash-message.success');
+            flashMessages.forEach(message => {
+                closeFlashMessage(message.id);
+            });
+        }, 5000);
+        
+        // Form submission handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const loginBtn = document.getElementById('loginBtn');
+            const email = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Basic validation
+            if (!email || !password) {
+                e.preventDefault();
+                alert('Please enter both email and password.');
+                return;
+            }
+            
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Please enter a valid email address.');
+                return;
+            }
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+        });
+        
+        // Add CSS for slideUp animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideUp {
+                from {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Focus management
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('username');
+            if (emailInput && !emailInput.value) {
+                emailInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

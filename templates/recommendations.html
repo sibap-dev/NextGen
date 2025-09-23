@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Recommendations - PM Internship Scheme</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* NAVIGATION */
+        .nav-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .nav-brand img {
+            height: 30px;
+        }
+        
+        .back-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* HEADER */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+        
+        header .content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+        
+        .user-summary {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto 0;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .user-summary h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+        }
+        
+        .user-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* AI ENHANCEMENT BANNER */
+        .ai-banner {
+            text-align: center;
+            margin: 20px auto;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ai-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .ai-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(155, 89, 182, 0.4);
+        }
+        
+        .ai-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* FILTERS */
+        .filters {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .filter-btn {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        
+        /* RECOMMENDATIONS GRID */
+        .internship-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .internship-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .internship-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .government .company-logo {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+        
+        .service-based .company-logo {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        
+        .company-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .internship-title {
+            font-size: 1.1rem;
+            color: #3498db;
+            font-weight: 600;
+        }
+        
+        .card-details {
+            flex-grow: 1;
+        }
+        
+        .detail-item {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            min-width: 130px;
+            color: #7f8c8d;
+        }
+        
+        .detail-value {
+            color: #2c3e50;
+        }
+        
+        .skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        
+        .skill-tag {
+            background: #e1f0fa;
+            color: #2980b9;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .description {
+            margin-top: 15px;
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        
+        .card-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stipend {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #27ae60;
+        }
+        
+        .apply-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .apply-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .apply-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .type-badge {
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            background: #e74c3c;
+            color: white;
+            padding: 5px 35px;
+            transform: rotate(45deg);
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .government .type-badge {
+            background: #2c3e50;
+        }
+        
+        .service-based .type-badge {
+            background: #27ae60;
+        }
+        
+        .no-results {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        /* REFRESH SECTION */
+        .refresh-section {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            margin: 40px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* ALERTS AND NOTIFICATIONS */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1001;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .alert.success {
+            background: #27ae60;
+        }
+        
+        .alert.info {
+            background: #3498db;
+        }
+        
+        .alert.warning {
+            background: #f39c12;
+        }
+        
+        /* LOADING INDICATOR */
+        .loading-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(52, 152, 219, 0.95);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .loading-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        .loading-text {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .loading-subtext {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .internship-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .detail-item {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                min-width: auto;
+                margin-bottom: 3px;
+            }
+            
+            .nav-bar {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .user-summary {
+                margin: 20px 10px 0;
+            }
+            
+            .alert {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .internship-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .filter-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .card-footer {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .apply-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* ANIMATION CLASSES */
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* LOADING SPINNER */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <a href="/home" class="nav-brand">
+                <img src="/static/images/pm_internship_logo_eng.svg" alt="Government Emblem">
+                <span>PM Internship Scheme</span>
+            </a>
+            <a href="/home" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+        
+        <!-- Header -->
+        <header>
+            <div class="content">
+                <h1>🎯 Your Personalized Recommendations</h1>
+                <p class="subtitle">Smart internship matches based on your profile, skills, and interests</p>
+                
+                <div class="user-summary">
+                    <h3>Hello {{ user_name or 'User' }}!</h3>
+                    <div class="user-tags">
+                        {% if user.area_of_interest %}
+                            <span class="tag">{{ user.area_of_interest }}</span>
+                        {% endif %}
+                        {% if user.qualification %}
+                            <span class="tag">{{ user.qualification }}</span>
+                        {% endif %}
+                        {% if user.experience %}
+                            <span class="tag">{{ user.experience }} Experience</span>
+                        {% endif %}
+                        {% if user.district %}
+                            <span class="tag">{{ user.district }}</span>
+                        {% endif %}
+                        {% if user.skills %}
+                            {% for skill in user.skills.split(',')[:3] %}
+                                <span class="tag">{{ skill.strip() }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- AI Enhancement Banner -->
+                <div class="ai-banner">
+                    <div style="font-size: 14px; margin-bottom: 5px; opacity: 0.9;">
+                        Want even better matches?
+                    </div>
+                    <button onclick="loadAIRecommendations()" class="ai-btn" id="aiBtn">
+                        <i class="fas fa-brain"></i>
+                        Get AI-Powered Recommendations
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Filters -->
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-globe"></i> All Recommendations
+            </button>
+            <button class="filter-btn" data-filter="government">
+                <i class="fas fa-landmark"></i> Government
+            </button>
+            <button class="filter-btn" data-filter="service-based">
+                <i class="fas fa-building"></i> Service-Based
+            </button>
+        </div>
+        
+        <!-- Recommendations Grid -->
+        <div class="internship-grid" id="internshipContainer">
+            <!-- Recommendations will be populated by JavaScript -->
+        </div>
+        
+        <!-- Refresh Section -->
+        <div class="refresh-section">
+            <h3>Want Fresh Recommendations?</h3>
+            <p>Get new AI-generated suggestions based on your updated profile</p>
+            <button class="refresh-btn" onclick="refreshRecommendations()" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i>
+                Refresh Recommendations
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const user_name = {{ user_name|tojson|safe if user_name else 'null' }};
+        const recommendations = {{ recommendations|tojson|safe }};
+        
+        let aiRecommendationsLoaded = false;
+        let currentFilter = 'all';
+        
+        // Function to generate company logo based on company name
+        function generateLogo(companyName) {
+            const words = companyName.split(' ');
+            if (words.length >= 2) {
+                return words[0].substring(0, 1) + words[1].substring(0, 1);
+            }
+            return companyName.substring(0, 2).toUpperCase();
+        }
+        
+        // Function to render internship cards
+        function renderInternships(internshipsToRender) {
+            if (!Array.isArray(internshipsToRender)) {
+                console.error('Invalid recommendations data');
+                internshipsToRender = [];
+            }
+            
+            const container = document.getElementById('internshipContainer');
+            container.innerHTML = '';
+            
+            if (internshipsToRender.length === 0) {
+                container.innerHTML = '<div class="no-results">No internships match your selected criteria.</div>';
+                return;
+            }
+            
+            internshipsToRender.forEach((internship, index) => {
+                const card = document.createElement('div');
+                card.className = `internship-card ${internship.type} fade-in`;
+                card.setAttribute('data-type', internship.type);
+                card.style.animationDelay = `${index * 100}ms`;
+                
+                // Handle skills array (could be array or string)
+                let skillsHtml = '';
+                if (Array.isArray(internship.skills)) {
+                    skillsHtml = internship.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('');
+                } else if (typeof internship.skills === 'string') {
+                    skillsHtml = internship.skills.split(',').map(skill => `<span class="skill-tag">${skill.trim()}</span>`).join('');
+                }
+                
+                // Update the internship card template string to escape special characters
+                card.innerHTML = `
+                    <div class="type-badge">${internship.type === 'government' ? 'Government' : 'Service-Based'}</div>
+                    <div class="card-header">
+                        <div class="company-logo">${generateLogo(internship.company || '')}</div>
+                        <div class="company-info">
+                            <h3>${internship.company || ''}</h3>
+                            <div class="internship-title">${internship.title || ''}</div>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Sector:</span>
+                            <span class="detail-value">${internship.sector}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Skills Required:</span>
+                            <div class="detail-value">
+                                <div class="skills">${skillsHtml}</div>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">${internship.duration}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Location:</span>
+                            <span class="detail-value">${internship.location}</span>
+                        </div>
+                        <div class="description">${internship.description}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="stipend">${internship.stipend}</div>
+                        <button class="apply-btn" onclick="applyToInternship('${internship.company}', '${internship.title}', event)">
+                            <i class="fas fa-paper-plane"></i>
+                            Apply Now
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // Filter functionality
+        function setupFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Update active button
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Set active filter
+                    currentFilter = button.getAttribute('data-filter');
+                    applyFilters();
+                });
+            });
+            
+            function applyFilters() {
+                let filteredRecommendations = recommendations;
+                
+                // Apply type filter
+                if (currentFilter !== 'all') {
+                    filteredRecommendations = filteredRecommendations.filter(internship => 
+                        internship.type === currentFilter
+                    );
+                }
+                
+                renderInternships(filteredRecommendations);
+            }
+        }
+        
+        // AI Recommendations Loading
+        async function loadAIRecommendations() {
+            if (aiRecommendationsLoaded) {
+                showAlert('AI recommendations already loaded!', 'info');
+                return;
+            }
+
+            const aiBtn = document.getElementById('aiBtn');
+            if (!aiBtn) return;
+
+            const originalContent = aiBtn.innerHTML;
+
+            try {
+                aiBtn.disabled = true;
+                aiBtn.innerHTML = '<span class="loading"></span> Generating AI Recommendations...';
+                showLoadingOverlay();
+
+                const response = await fetch('/api/generate-ai-recommendations');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                hideLoadingOverlay();
+                
+                if (data.success && data.recommendations) {
+                    // Replace recommendations with AI-generated ones
+                    recommendations.length = 0; // Clear existing
+                    recommendations.push(...data.recommendations); // Add new ones
+                    
+                    renderInternships(recommendations);
+                    aiRecommendationsLoaded = true;
+                    
+                    aiBtn.innerHTML = '<i class="fas fa-check"></i> AI Recommendations Loaded';
+                    aiBtn.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+                    
+                    showAlert('🤖 AI-powered recommendations generated successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to generate AI recommendations');
+                }
+            } catch (error) {
+                console.error('AI generation failed:', error);
+                hideLoadingOverlay();
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = originalContent;
+                showAlert('Using smart default recommendations for you', 'info');
+            }
+        }
+        
+        // Update the applyToInternship function
+        function applyToInternship(company, title, event) {  // Add event parameter
+            const btn = event.currentTarget;  // Use currentTarget instead of target
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Applying...';
+            
+            // Simulate application process
+            setTimeout(() => {
+                const applicationId = 'PMI' + Date.now().toString().slice(-6);
+                
+                showAlert(`🎉 Application submitted successfully!\n\nCompany: ${company}\nPosition: ${title}\nApplication ID: ${applicationId}`, 'success');
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Applied';
+                btn.style.background = '#27ae60';
+                
+                // Reset after 3 seconds
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Apply Now';
+                    btn.style.background = '#3498db';
+                }, 3000);
+            }, 2000);
+        }
+        
+        // Refresh recommendations function
+        function refreshRecommendations() {
+            const btn = document.getElementById('refreshBtn');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Generating New Recommendations...';
+            
+            // Reset AI flag and reload
+            aiRecommendationsLoaded = false;
+            const aiBtn = document.getElementById('aiBtn');
+            aiBtn.innerHTML = '<i class="fas fa-brain"></i> Get AI-Powered Recommendations';
+            aiBtn.style.background = 'linear-gradient(135deg, #9b59b6, #8e44ad)';
+            aiBtn.disabled = false;
+            
+            setTimeout(() => {
+                loadAIRecommendations().then(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                });
+            }, 1000);
+        }
+        
+        // Utility Functions
+        function showLoadingOverlay() {
+            const overlay = document.createElement('div');
+            overlay.id = 'loadingOverlay';
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="loading-text">Generating AI Recommendations</div>
+                <div class="loading-subtext">Our AI is analyzing your profile...</div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `alert ${type} slide-up`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transform = 'translateX(100%)';
+                setTimeout(() => alert.remove(), 300);
+            }, 4000);
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show default recommendations immediately
+            renderInternships(recommendations);
+            setupFilters();
+            
+            // Show welcome message
+            setTimeout(() => {
+                showAlert(`Welcome ${user_name || 'User'}! Here are your personalized recommendations.`, 'success');
+            }, 1000);
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        document.querySelector('[data-filter="all"]').click();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        document.querySelector('[data-filter="government"]').click();
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        document.querySelector('[data-filter="service-based"]').click();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        refreshRecommendations();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
