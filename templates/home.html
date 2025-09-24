@@ -15,19 +15,28 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        body {
-            background-color: #f5f9ff;
-            color: #333;
-        }
+
         
         /* Header Styles */
         .header {
             background: linear-gradient(135deg, #1a4f8e 0%, #2a6bb3 100%);
             padding: 15px 30px;
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
             display: flex;
             align-items: center;
             justify-content: flex-start;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Add padding to body to account for fixed header */
+        body {
+            background-color: #f5f9ff;
+            color: #333;
+            padding-top: 80px; /* Adjust this value based on your header height */
         }
         
         .logo-container {
