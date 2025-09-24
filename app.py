@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from supabase import create_client, Client
 import re
+import difflib
 from datetime import datetime, timedelta, timezone
 import google.generativeai as genai
 import os
@@ -291,8 +292,335 @@ def get_fallback_response(message):
     else:
         return "🤖 I can help you with:\n🔹 Eligibility criteria\n🔹 Application process\n🔹 Benefits & stipend\n🔹 Required documents\n🔹 Contact support\n\nWhat would you like to know?"
 
+# ENHANCED: Skill Matching Algorithm with Government Priority
+def calculate_skill_match_score(user_skills_string, required_skills_list, user_profile=None):
+    """
+    Calculate skill match percentage between user and job requirements
+    Returns a score from 0-100 based on skill compatibility
+    """
+    if not user_skills_string or not required_skills_list:
+        return 0
+    
+    # Parse user skills
+    user_skills = [skill.strip().lower() for skill in user_skills_string.split(',') if skill.strip()]
+    required_skills = [skill.strip().lower() for skill in required_skills_list if skill.strip()]
+    
+    if not user_skills or not required_skills:
+        return 0
+    
+    match_score = 0
+    total_weight = len(required_skills)
+    
+    for req_skill in required_skills:
+        best_match_score = 0
+        
+        for user_skill in user_skills:
+            # Exact match
+            if user_skill == req_skill:
+                best_match_score = 1.0
+                break
+            
+            # Partial match using fuzzy matching
+            similarity = difflib.SequenceMatcher(None, user_skill, req_skill).ratio()
+            if similarity > 0.8:  # 80% similarity threshold
+                best_match_score = max(best_match_score, similarity)
+            
+            # Check if one skill contains another
+            elif req_skill in user_skill or user_skill in req_skill:
+                best_match_score = max(best_match_score, 0.9)
+            
+            # Common skill variations
+            skill_variations = {
+                'python': ['py', 'python3', 'python programming'],
+                'javascript': ['js', 'node.js', 'nodejs', 'react', 'angular', 'vue'],
+                'java': ['java programming', 'core java', 'advanced java'],
+                'sql': ['mysql', 'postgresql', 'database', 'rdbms'],
+                'machine learning': ['ml', 'ai', 'artificial intelligence', 'deep learning'],
+                'data analysis': ['data science', 'analytics', 'statistics'],
+                'web development': ['html', 'css', 'frontend', 'backend'],
+                'communication': ['english', 'presentation', 'speaking'],
+            }
+            
+            for base_skill, variations in skill_variations.items():
+                if (req_skill == base_skill and user_skill in variations) or \
+                   (user_skill == base_skill and req_skill in variations):
+                    best_match_score = max(best_match_score, 0.95)
+        
+        match_score += best_match_score
+    
+    # Calculate percentage
+    percentage = (match_score / total_weight) * 100
+    
+    # Add bonus points based on user profile completeness and other factors
+    bonus_points = 0
+    
+    if user_profile:
+        # Bonus for relevant qualification
+        if user_profile.get('qualification'):
+            qualification = user_profile['qualification'].lower()
+            if any(edu in qualification for edu in ['engineering', 'btech', 'computer', 'it', 'technology']):
+                bonus_points += 5
+        
+        # Bonus for relevant area of interest
+        if user_profile.get('area_of_interest'):
+            interest = user_profile['area_of_interest'].lower()
+            job_sectors = ['technology', 'finance', 'healthcare', 'engineering', 'management']
+            if any(sector in interest for sector in job_sectors):
+                bonus_points += 3
+        
+        # Bonus for prior internship experience
+        if user_profile.get('prior_internship') == 'yes':
+            bonus_points += 7
+    
+    # Cap the percentage at 100
+    final_percentage = min(100, percentage + bonus_points)
+    
+    return round(final_percentage, 1)
+
+def sort_recommendations_by_match(recommendations, user):
+    """
+    Sort recommendations by skill match accuracy with GOVERNMENT PRIORITY
+    Ensures balanced mix: 2-3 government + 2-3 service-based in top 5
+    """
+    user_skills = user.get('skills', '') if user else ''
+    
+    # Separate government and service-based recommendations
+    government_recs = []
+    service_recs = []
+    
+    for rec in recommendations:
+        match_score = calculate_skill_match_score(
+            user_skills, 
+            rec.get('skills', []), 
+            user
+        )
+        
+        # Add the match score to the recommendation
+        rec['skill_match_score'] = match_score
+        
+        if rec.get('type') == 'government':
+            # Government internships get bonus (10 points for priority)
+            boosted_score = min(100, match_score + 10)
+            rec['skill_match_score'] = boosted_score
+            government_recs.append((boosted_score, rec))
+        else:
+            service_recs.append((match_score, rec))
+    
+    # Sort each category by match score
+    government_recs.sort(key=lambda x: x[0], reverse=True)
+    service_recs.sort(key=lambda x: x[0], reverse=True)
+    
+    # Create balanced top 5: 3 government + 2 service-based (or best available mix)
+    top_recommendations = []
+    
+    # Add top government recommendations (max 3)
+    gov_count = 0
+    for score, rec in government_recs:
+        if gov_count < 3:
+            top_recommendations.append(rec)
+            gov_count += 1
+    
+    # Add top service-based recommendations (fill remaining spots)
+    service_count = 0
+    for score, rec in service_recs:
+        if len(top_recommendations) < 5 and service_count < 3:
+            top_recommendations.append(rec)
+            service_count += 1
+    
+    # If we still need more and have remaining government ones
+    if len(top_recommendations) < 5 and gov_count < len(government_recs):
+        for score, rec in government_recs[gov_count:]:
+            if len(top_recommendations) < 5:
+                top_recommendations.append(rec)
+    
+    # Final sort by skill_match_score to maintain quality order within the balanced set
+    top_recommendations.sort(key=lambda x: x.get('skill_match_score', 0), reverse=True)
+    
+    return top_recommendations[:5]
+
+def get_enhanced_default_recommendations(user):
+    """Enhanced recommendations with BALANCED MIX - Government priority but shows both types"""
+    area_of_interest = user.get('area_of_interest', '').lower() if user else ''
+    skills = user.get('skills', '').lower() if user else ''
+    qualification = user.get('qualification', '').lower() if user else ''
+    
+    # BALANCED POOL: Equal mix of government and service-based opportunities
+    all_recommendations = [
+        # GOVERNMENT INTERNSHIPS (7 options - high quality)
+        {
+            "company": "ISRO",
+            "title": "Space Technology Research Intern",
+            "type": "government",
+            "sector": "Space Technology & Research",
+            "skills": ["Programming", "Research", "Data Analysis", "MATLAB", "Python"],
+            "duration": "6 Months",
+            "location": "Bangalore/Thiruvananthapuram",
+            "stipend": "₹25,000/month",
+            "description": "🚀 Join India's premier space agency! Work on cutting-edge satellite technology and space missions. Contribute to national space research programs."
+        },
+        {
+            "company": "DRDO",
+            "title": "Defence Technology Intern",
+            "type": "government",
+            "sector": "Defence Research & Development",
+            "skills": ["Research", "Engineering", "Technical Analysis", "Problem Solving", "Innovation"],
+            "duration": "4 Months",
+            "location": "Delhi/Pune/Hyderabad",
+            "stipend": "₹22,000/month",
+            "description": "🛡️ Shape India's defence future! Work on advanced defence technologies and contribute to national security research projects."
+        },
+        {
+            "company": "NITI Aayog",
+            "title": "Policy Research & Analysis Intern",
+            "type": "government",
+            "sector": "Public Policy & Governance",
+            "skills": ["Research", "Policy Analysis", "Data Interpretation", "Report Writing", "Communication"],
+            "duration": "4 Months",
+            "location": "New Delhi",
+            "stipend": "₹20,000/month",
+            "description": "🏛️ Impact India's development! Research policy solutions and contribute to national development strategies."
+        },
+        {
+            "company": "Indian Railways",
+            "title": "Railway Operations & Technology Intern",
+            "type": "government",
+            "sector": "Transportation & Logistics",
+            "skills": ["Operations Management", "Logistics", "Engineering", "Project Management", "Data Analysis"],
+            "duration": "5 Months",
+            "location": "Multiple Cities",
+            "stipend": "₹18,000/month",
+            "description": "🚂 Power India's lifeline! Learn operations of world's largest railway network."
+        },
+        {
+            "company": "CSIR Labs",
+            "title": "Scientific Research Intern",
+            "type": "government",
+            "sector": "Scientific Research",
+            "skills": ["Research", "Data Analysis", "Laboratory Skills", "Scientific Writing", "Innovation"],
+            "duration": "6 Months",
+            "location": "Multiple CSIR Centers",
+            "stipend": "₹24,000/month",
+            "description": "🔬 Advance scientific knowledge! Work with India's premier scientific research organization."
+        },
+        {
+            "company": "Ministry of Electronics & IT",
+            "title": "Digital India Technology Intern",
+            "type": "government",
+            "sector": "Digital Governance",
+            "skills": ["Programming", "Digital Literacy", "Web Development", "Data Management", "Cybersecurity"],
+            "duration": "4 Months",
+            "location": "New Delhi/Pune",
+            "stipend": "₹21,000/month",
+            "description": "💻 Build Digital India! Contribute to nation's digital transformation and e-governance initiatives."
+        },
+        {
+            "company": "BARC",
+            "title": "Nuclear Technology Research Intern",
+            "type": "government",
+            "sector": "Nuclear Research",
+            "skills": ["Engineering", "Research", "Data Analysis", "Safety Protocols", "Technical Documentation"],
+            "duration": "5 Months",
+            "location": "Mumbai/Kalpakkam",
+            "stipend": "₹26,000/month",
+            "description": "⚛️ Power India's future! Work on nuclear technology and contribute to clean energy research."
+        },
+        
+        # SERVICE-BASED INTERNSHIPS (8 options - high quality with competitive stipends)
+        {
+            "company": "TCS (Tata Consultancy Services)",
+            "title": "Software Development Intern",
+            "type": "service-based",
+            "sector": "IT Services",
+            "skills": ["Java", "Python", "Programming", "Problem Solving", "Communication"],
+            "duration": "3 Months",
+            "location": "Multiple Cities",
+            "stipend": "₹30,000/month",
+            "description": "💼 Industry leader experience! Work on enterprise software projects with India's largest IT company."
+        },
+        {
+            "company": "Infosys",
+            "title": "Digital Innovation Intern",
+            "type": "service-based",
+            "sector": "IT Consulting",
+            "skills": ["Digital Technologies", "Innovation", "Cloud Computing", "Problem Solving", "Teamwork"],
+            "duration": "3 Months",
+            "location": "Bangalore/Pune",
+            "stipend": "₹28,000/month",
+            "description": "🌟 Innovation at scale! Work on cutting-edge digital transformation projects with global impact."
+        },
+        {
+            "company": "Wipro",
+            "title": "Technology Solutions Intern",
+            "type": "service-based",
+            "sector": "IT Services",
+            "skills": ["Cloud Computing", "DevOps", "Programming", "Agile", "Learning Agility"],
+            "duration": "4 Months",
+            "location": "Pune/Bangalore",
+            "stipend": "₹32,000/month",
+            "description": "☁️ Future-ready skills! Gain hands-on experience with cloud technologies and modern development practices."
+        },
+        {
+            "company": "Microsoft India",
+            "title": "Technology Trainee",
+            "type": "service-based",
+            "sector": "Technology",
+            "skills": ["Programming", "AI/ML", "Cloud Platforms", "Data Science", "Innovation"],
+            "duration": "3 Months",
+            "location": "Hyderabad/Bangalore",
+            "stipend": "₹40,000/month",
+            "description": "🚀 Global technology experience! Work with cutting-edge Microsoft technologies and AI platforms."
+        },
+        {
+            "company": "Google India",
+            "title": "Software Engineering Intern",
+            "type": "service-based",
+            "sector": "Technology",
+            "skills": ["Programming", "Algorithms", "Data Structures", "Problem Solving", "Software Design"],
+            "duration": "4 Months",
+            "location": "Bangalore/Gurgaon",
+            "stipend": "₹50,000/month",
+            "description": "🌟 Dream opportunity! Work with world-class engineers on products used by billions."
+        },
+        {
+            "company": "Amazon India",
+            "title": "SDE Intern",
+            "type": "service-based",
+            "sector": "E-commerce Technology",
+            "skills": ["Programming", "System Design", "AWS", "Data Structures", "Problem Solving"],
+            "duration": "3 Months",
+            "location": "Bangalore/Hyderabad",
+            "stipend": "₹45,000/month",
+            "description": "📦 Scale at Amazon! Work on systems handling millions of customers and learn cloud technologies."
+        },
+        {
+            "company": "HDFC Bank",
+            "title": "Banking Technology Intern",
+            "type": "service-based",
+            "sector": "Financial Services",
+            "skills": ["Financial Technology", "Data Analysis", "Banking Operations", "Communication", "Excel"],
+            "duration": "3 Months",
+            "location": "Mumbai/Pune",
+            "stipend": "₹25,000/month",
+            "description": "🏦 FinTech innovation! Experience digital banking transformation with India's leading private bank."
+        },
+        {
+            "company": "Accenture",
+            "title": "Technology Consulting Intern",
+            "type": "service-based",
+            "sector": "IT Consulting",
+            "skills": ["Business Analysis", "Technology Consulting", "Communication", "Problem Solving", "Project Management"],
+            "duration": "4 Months",
+            "location": "Multiple Cities",
+            "stipend": "₹27,000/month",
+            "description": "💡 Consulting excellence! Work with global clients on technology transformation projects."
+        }
+    ]
+    
+    # Return balanced top 5 with government priority
+    return sort_recommendations_by_match(all_recommendations, user)
+
 def generate_recommendations_fast(user):
-    """Fast AI recommendations with timeout"""
+    """Fast AI recommendations with timeout and government preference"""
     try:
         # Shorter, more focused prompt for faster response
         prompt = f"""
@@ -301,13 +629,15 @@ def generate_recommendations_fast(user):
         - Interest: {user.get('area_of_interest', 'IT')}
         - Education: {user.get('qualification', 'Graduate')}
         
+        IMPORTANT: Include more government internships (ISRO, DRDO, NITI Aayog, etc.)
+        
         JSON format: [{{"company":"Name","title":"Position","type":"government|service-based","sector":"Sector","skills":["skill1","skill2"],"duration":"X Months","location":"City","stipend":"₹X/month","description":"Brief desc"}}]
         """
         
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                max_output_tokens=800,  # Reduced tokens for faster response
+                max_output_tokens=800,
                 temperature=0.7,
             )
         )
@@ -319,232 +649,13 @@ def generate_recommendations_fast(user):
         if start_idx != -1 and end_idx != -1:
             json_str = recommendations_text[start_idx:end_idx]
             recommendations = json.loads(json_str)
-            return recommendations[:6]
+            return sort_recommendations_by_match(recommendations[:6], user)
         else:
             raise Exception("Could not parse AI response")
             
     except Exception as e:
         print(f"Fast AI recommendation error: {e}")
         return get_enhanced_default_recommendations(user)
-
-def get_enhanced_default_recommendations(user):
-    """Enhanced default recommendations based on user profile"""
-    area_of_interest = user.get('area_of_interest', '').lower()
-    skills = user.get('skills', '').lower()
-    qualification = user.get('qualification', '').lower()
-    user_name = user.get('full_name', 'you')
-    
-    # Personalized IT recommendations
-    if 'information technology' in area_of_interest or 'software' in area_of_interest:
-        return [
-            {
-                "company": "TCS (Tata Consultancy Services)",
-                "title": "Software Development Intern",
-                "type": "service-based",
-                "sector": "IT Services",
-                "skills": ["Java", "Python", "Problem Solving", "Communication"],
-                "duration": "3 Months",
-                "location": "Multiple Cities",
-                "stipend": "₹30,000/month",
-                "description": f"Perfect for {user_name} with {qualification} background. Work on enterprise software projects and gain real-world coding experience."
-            },
-            {
-                "company": "ISRO",
-                "title": "Technology Intern",
-                "type": "government",
-                "sector": "Space Technology",
-                "skills": ["Programming", "Research", "Data Analysis", "Innovation"],
-                "duration": "6 Months",
-                "location": "Bangalore",
-                "stipend": "₹25,000/month",
-                "description": "Contribute to India's space missions. Excellent match for your technical skills and scientific interests."
-            },
-            {
-                "company": "Infosys",
-                "title": "Digital Innovation Intern",
-                "type": "service-based",
-                "sector": "IT Consulting",
-                "skills": ["Digital Literacy", "Innovation", "Teamwork", "Problem Solving"],
-                "duration": "3 Months",
-                "location": "Pune/Bangalore",
-                "stipend": "₹28,000/month",
-                "description": "Work on cutting-edge digital transformation projects. Perfect stepping stone for your IT career."
-            },
-            {
-                "company": "DRDO",
-                "title": "Research Intern",
-                "type": "government",
-                "sector": "Defence Research",
-                "skills": ["Research", "Technical Analysis", "Problem Solving", "Documentation"],
-                "duration": "4 Months",
-                "location": "Delhi/Hyderabad",
-                "stipend": "₹20,000/month",
-                "description": "Join national defence research projects. Build technical expertise in cutting-edge technologies."
-            },
-            {
-                "company": "Wipro",
-                "title": "Cloud Technology Intern",
-                "type": "service-based",
-                "sector": "Cloud Services",
-                "skills": ["Cloud Computing", "AWS", "Problem Solving", "Learning Agility"],
-                "duration": "4 Months",
-                "location": "Pune",
-                "stipend": "₹32,000/month",
-                "description": "Gain hands-on cloud experience with enterprise clients. High-demand skills for your future."
-            },
-            {
-                "company": "HCL Technologies",
-                "title": "Technology Trainee",
-                "type": "service-based",
-                "sector": "IT Services",
-                "skills": ["Programming", "Database", "Web Technologies", "Communication"],
-                "duration": "3 Months",
-                "location": "Noida/Chennai",
-                "stipend": "₹26,000/month",
-                "description": "Comprehensive technology training program. Build industry-ready skills with mentorship support."
-            }
-        ]
-    
-    # AI/ML specialized recommendations
-    elif 'artificial intelligence' in area_of_interest or 'machine learning' in area_of_interest:
-        return [
-            {
-                "company": "Google India",
-                "title": "AI/ML Research Intern",
-                "type": "service-based",
-                "sector": "Artificial Intelligence",
-                "skills": ["Python", "Machine Learning", "TensorFlow", "Data Science"],
-                "duration": "4 Months",
-                "location": "Bangalore",
-                "stipend": "₹45,000/month",
-                "description": f"Perfect for {user_name}! Work on cutting-edge AI research with Google's world-class team."
-            },
-            {
-                "company": "Microsoft India",
-                "title": "Data Science Intern",
-                "type": "service-based",
-                "sector": "Data Science",
-                "skills": ["Python", "R", "Statistical Analysis", "Azure ML"],
-                "duration": "3 Months",
-                "location": "Hyderabad",
-                "stipend": "₹40,000/month",
-                "description": "Analyze big data and build ML models. Excellent opportunity to work with Microsoft's AI platform."
-            },
-            {
-                "company": "ISRO",
-                "title": "Data Analytics Intern",
-                "type": "government",
-                "sector": "Space Data Science",
-                "skills": ["Data Analysis", "Python", "Satellite Data", "Research"],
-                "duration": "5 Months",
-                "location": "Bangalore",
-                "stipend": "₹25,000/month",
-                "description": "Apply AI/ML to space data analysis. Unique opportunity to work with satellite imagery and space research."
-            },
-            {
-                "company": "TCS Research",
-                "title": "AI Innovation Intern",
-                "type": "service-based",
-                "sector": "AI Research",
-                "skills": ["Machine Learning", "Deep Learning", "Python", "Research"],
-                "duration": "4 Months",
-                "location": "Pune",
-                "stipend": "₹35,000/month",
-                "description": "Work on breakthrough AI innovations. Contribute to next-generation AI solutions for global clients."
-            },
-            {
-                "company": "IIT Research Labs",
-                "title": "AI Research Assistant",
-                "type": "government",
-                "sector": "Academic Research",
-                "skills": ["Research", "Python", "ML Algorithms", "Technical Writing"],
-                "duration": "6 Months",
-                "location": "Multiple IITs",
-                "stipend": "₹20,000/month",
-                "description": "Collaborate with top researchers on AI projects. Great for building research experience and academic credentials."
-            },
-            {
-                "company": "Wipro AI Labs",
-                "title": "ML Engineering Intern",
-                "type": "service-based",
-                "sector": "AI Engineering",
-                "skills": ["MLOps", "Python", "Cloud Platforms", "Model Deployment"],
-                "duration": "3 Months",
-                "location": "Bangalore",
-                "stipend": "₹32,000/month",
-                "description": "Learn ML engineering best practices. Deploy AI models at scale for enterprise applications."
-            }
-        ]
-    
-    # General recommendations for other interests
-    return [
-        {
-            "company": "Reliance Industries",
-            "title": "Management Trainee",
-            "type": "service-based",
-            "sector": "Business Management",
-            "skills": ["Leadership", "Communication", "Business Analysis", "Project Management"],
-            "duration": "6 Months",
-            "location": "Mumbai",
-            "stipend": "₹35,000/month",
-            "description": f"Perfect for {user_name} to develop leadership skills. Comprehensive exposure to business operations."
-        },
-        {
-            "company": "HDFC Bank",
-            "title": "Banking Operations Intern",
-            "type": "service-based",
-            "sector": "Financial Services",
-            "skills": ["Financial Analysis", "Customer Service", "Banking Operations", "Communication"],
-            "duration": "3 Months",
-            "location": "Multiple Cities",
-            "stipend": "₹25,000/month",
-            "description": "Gain experience in India's leading private bank. Learn banking operations and financial services."
-        },
-        {
-            "company": "NITI Aayog",
-            "title": "Policy Research Intern",
-            "type": "government",
-            "sector": "Public Policy",
-            "skills": ["Research", "Policy Analysis", "Report Writing", "Data Interpretation"],
-            "duration": "4 Months",
-            "location": "New Delhi",
-            "stipend": "₹18,000/month",
-            "description": "Contribute to national policy making. Research socio-economic issues and policy solutions."
-        },
-        {
-            "company": "Mahindra Group",
-            "title": "Business Development Intern",
-            "type": "service-based",
-            "sector": "Automotive & Business",
-            "skills": ["Business Development", "Market Research", "Communication", "Strategic Thinking"],
-            "duration": "4 Months",
-            "location": "Pune/Mumbai",
-            "stipend": "₹28,000/month",
-            "description": "Work with India's leading automotive company. Develop business strategy and market analysis skills."
-        },
-        {
-            "company": "Indian Railways",
-            "title": "Operations Intern",
-            "type": "government",
-            "sector": "Transportation",
-            "skills": ["Operations Management", "Logistics", "Problem Solving", "Team Coordination"],
-            "duration": "5 Months",
-            "location": "Multiple Cities",
-            "stipend": "₹15,000/month",
-            "description": "Learn operations of world's largest railway network. Great exposure to logistics and operations management."
-        },
-        {
-            "company": "Larsen & Toubro",
-            "title": "Engineering Trainee",
-            "type": "service-based",
-            "sector": "Engineering & Construction",
-            "skills": ["Engineering Principles", "Project Management", "CAD", "Technical Communication"],
-            "duration": "6 Months",
-            "location": "Chennai/Mumbai",
-            "stipend": "₹24,000/month",
-            "description": "Work on large-scale engineering projects. Build practical engineering skills with industry leader."
-        }
-    ]
 
 def get_default_recommendations(user):
     """Legacy function - calls enhanced version"""
@@ -749,6 +860,7 @@ def profile():
                          user_email=session.get('user_email', ''),
                          user_initials=session.get('user_initials', 'U'))
 
+# ENHANCED: Recommendations route with balanced top 5 results and government preference
 @app.route('/recommendations')
 def recommendations():
     if not session.get('logged_in'):
@@ -760,22 +872,23 @@ def recommendations():
     
     # Check if profile is completed
     if not user.get('profile_completed'):
-        flash('Please complete your profile first to get recommendations.', 'warning')
+        flash('Please complete your profile first to get personalized recommendations.', 'warning')
         return redirect(url_for('profile'))
     
-    # FAST LOADING: Always start with enhanced default recommendations
-    recommendations = get_enhanced_default_recommendations(user)
+    # Get top 5 balanced recommendations with government priority
+    top_recommendations = get_enhanced_default_recommendations(user)
     
     return render_template('recommendations.html', 
                          user=user,
-                         recommendations=recommendations,
+                         recommendations=top_recommendations,
                          user_name=session.get('user_name', 'User'),
                          user_email=session.get('user_email', ''),
                          user_initials=session.get('user_initials', 'U'))
 
+# ENHANCED: AI recommendations with skill matching and government preference
 @app.route('/api/generate-ai-recommendations')
 def generate_ai_recommendations():
-    """AJAX endpoint to generate AI recommendations in background"""
+    """AJAX endpoint to generate AI recommendations sorted by match score with government preference"""
     if not session.get('logged_in'):
         return jsonify({'error': 'Not authenticated'}), 401
     
@@ -784,18 +897,24 @@ def generate_ai_recommendations():
         return jsonify({'error': 'User not found'}), 404
     
     try:
-        # Try to generate AI recommendations with timeout
+        # Try to generate AI recommendations
         ai_recommendations = generate_recommendations_fast(user)
+        
+        # Sort AI recommendations by skill match with government preference
+        sorted_recommendations = sort_recommendations_by_match(ai_recommendations, user)
+        
         return jsonify({
             'success': True,
-            'recommendations': ai_recommendations
+            'recommendations': sorted_recommendations
         })
     except Exception as e:
         print(f"AI recommendations error: {e}")
+        # Fallback to enhanced default recommendations
+        fallback_recommendations = get_enhanced_default_recommendations(user)
         return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+            'success': True,
+            'recommendations': fallback_recommendations
+        })
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -859,7 +978,7 @@ def health_check():
 
 # Vercel serverless function handler
 if __name__ == '__main__':
-    print("🚀 Starting PM Internship App with Fast Recommendations...")
+    print("🚀 Starting PM Internship App with Balanced Government Priority Recommendations...")
     print(f"✅ Supabase URL: {os.getenv('SUPABASE_URL')}")
     app.run(debug=False)  # Set to False for production
 
