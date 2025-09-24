@@ -525,11 +525,11 @@ def get_enhanced_default_recommendations(user):
             "description": "⚛️ Power India's future! Work on nuclear technology and contribute to clean energy research."
         },
         
-        # SERVICE-BASED INTERNSHIPS (8 options - high quality with competitive stipends)
+        # PRIVATE-BASED INTERNSHIPS (8 options - high quality with competitive stipends)
         {
             "company": "TCS (Tata Consultancy Services)",
             "title": "Software Development Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "IT Services",
             "skills": ["Java", "Python", "Programming", "Problem Solving", "Communication"],
             "duration": "3 Months",
@@ -540,7 +540,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Infosys",
             "title": "Digital Innovation Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "IT Consulting",
             "skills": ["Digital Technologies", "Innovation", "Cloud Computing", "Problem Solving", "Teamwork"],
             "duration": "3 Months",
@@ -551,7 +551,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Wipro",
             "title": "Technology Solutions Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "IT Services",
             "skills": ["Cloud Computing", "DevOps", "Programming", "Agile", "Learning Agility"],
             "duration": "4 Months",
@@ -562,7 +562,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Microsoft India",
             "title": "Technology Trainee",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "Technology",
             "skills": ["Programming", "AI/ML", "Cloud Platforms", "Data Science", "Innovation"],
             "duration": "3 Months",
@@ -573,7 +573,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Google India",
             "title": "Software Engineering Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "Technology",
             "skills": ["Programming", "Algorithms", "Data Structures", "Problem Solving", "Software Design"],
             "duration": "4 Months",
@@ -584,7 +584,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Amazon India",
             "title": "SDE Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "E-commerce Technology",
             "skills": ["Programming", "System Design", "AWS", "Data Structures", "Problem Solving"],
             "duration": "3 Months",
@@ -595,7 +595,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "HDFC Bank",
             "title": "Banking Technology Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "Financial Services",
             "skills": ["Financial Technology", "Data Analysis", "Banking Operations", "Communication", "Excel"],
             "duration": "3 Months",
@@ -606,7 +606,7 @@ def get_enhanced_default_recommendations(user):
         {
             "company": "Accenture",
             "title": "Technology Consulting Intern",
-            "type": "service-based",
+            "type": "private-based",
             "sector": "IT Consulting",
             "skills": ["Business Analysis", "Technology Consulting", "Communication", "Problem Solving", "Project Management"],
             "duration": "4 Months",
@@ -631,7 +631,7 @@ def generate_recommendations_fast(user):
         
         IMPORTANT: Include more government internships (ISRO, DRDO, NITI Aayog, etc.)
         
-        JSON format: [{{"company":"Name","title":"Position","type":"government|service-based","sector":"Sector","skills":["skill1","skill2"],"duration":"X Months","location":"City","stipend":"₹X/month","description":"Brief desc"}}]
+        JSON format: [{{"company":"Name","title":"Position","type":"government|private-based","sector":"Sector","skills":["skill1","skill2"],"duration":"X Months","location":"City","stipend":"₹X/month","description":"Brief desc"}}]
         """
         
         response = model.generate_content(
